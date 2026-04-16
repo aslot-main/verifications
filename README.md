@@ -1,6 +1,9 @@
 ### Repo for verifying aslot games
 ### every file serving on next pages
 
+### CRASH
+- [crash](https://aslot-main.github.io/verifications/crash)
+
 ### LIMBO
 - [limbo](https://aslot-main.github.io/verifications/limbo)
 
