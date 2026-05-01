@@ -362,114 +362,120 @@
   </div>
   <script type="module">
     const query = locationRead.queryString();
-    
-    // risk 1
-    const allNumsShort = [
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-      23, 24, 25
-    ];
 
-    // risk 2
-    const allNumsFull = [
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-      23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36
-    ];
+    import { createApp } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 
-    import { createApp, ref, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
-    
+    const TILES_BY_RISK = {
+      1: 25,
+      2: 36,
+      3: 49,
+      4: 64
+    };
+
     createApp({
       data() {
         return {
           clientSeed: query.cs ?? "",
           nonce: query.n ?? "",
           serverSeed: query.ss ?? "",
-          risk: query.r ?? "",
-          lostMine: query.lm ?? 0,
+          risk: Number(query.r ?? 1),
+          lostMine: Number(query.lm ?? 0),
           gameResult: "0",
           minesArray: [],
+        };
+      },
+
+      mounted() {
+        if (this.clientSeed && this.nonce && this.serverSeed && this.risk) {
+          this.initResult();
         }
       },
-      mounted() {
-        if (this.clientSeed && this.nonce && this.serverSeed && this.risk) this.initResult()
-      },
+
       computed: {
         hashedServerSeed() {
           if (!this.serverSeed) return "0";
           return CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(`0x${this.serverSeed}`)).toString();
         }
       },
+
       methods: {
-        createNums(allNums, hash) {
-          const nums = [];
-          let h = CryptoJS.SHA256(hash).toString(CryptoJS.enc.Hex);
-          allNums.forEach((c) => {
-            nums.push({ num: c, hash: h });
-            h = h.substring(1) + h.charAt(0);
-          });
-
-          nums.sort(function (o1, o2) {
-            if (o1.hash < o2.hash) {
-              return -1;
-            } else if (o1.hash === o2.hash) {
-              return 0;
-            } else {
-              return 1;
-            }
-          });
-          return nums;
+        getTilesByRisk(risk) {
+          return TILES_BY_RISK[risk] ?? 25;
         },
+
+        bytesToUniformFloat(inputBytes) {
+          // 64-byte output
+          const hash = blake2b(inputBytes, null, 64); // Uint8Array(64)
+
+          // first 8 bytes as little-endian uint64
+          const view = new DataView(hash.buffer, hash.byteOffset, hash.byteLength);
+          const intVal = view.getBigUint64(0, true); // true = little-endian
+          const max = 0xFFFFFFFFFFFFFFFFn;
+
+          return Number(intVal) / Number(max);
+        },
+
+        calcMinesIxs(size, minesCount, randomValue) {
+          const remaining = Array.from({ length: size }, (_, i) => i + 1);
+          const mineIxs = [];
+
+          for (let i = 0; i < minesCount; i++) {
+            const seed = `${randomValue}-${i}`;
+            const seedBytes = new TextEncoder().encode(seed);
+
+            const rand = this.bytesToUniformFloat(seedBytes);
+            const index = Math.min(
+              Math.floor(rand * remaining.length),
+              remaining.length - 1
+            );
+
+            mineIxs.push(remaining[index]);
+            remaining.splice(index, 1);
+          }
+
+          return mineIxs;
+        },
+
         initResult() {
-          const resultArr = [this.clientSeed, this.nonce];
-          const hmac256 = CryptoJS.HmacSHA256(resultArr.join(":"), this.serverSeed).toString(
-            CryptoJS.enc.Hex
-          );
-          let seed = hmac256;
-          let finalNums = this.createNums(this.risk === 1 ? allNumsShort : allNumsFull, seed);
-          seed = CryptoJS.SHA256(seed).toString(CryptoJS.enc.Hex);
-          finalNums = this.createNums(finalNums, seed);
-          this.minesArray = finalNums.map((m) => m.num.num);
+          const randomValue = CryptoJS.HmacSHA256(
+            `${this.clientSeed}:${this.nonce}`,
+            this.serverSeed
+          ).toString(CryptoJS.enc.Hex);
+
+          const allTiles = this.getTilesByRisk(Number(this.risk));
+          this.minesArray = this.calcMinesIxs(allTiles, allTiles, randomValue);
         },
+
         countPayout(diamonds, mines, totallyTiles) {
-          let risk = totallyTiles === 25 ? 1 : 2;
-          let m = mines;
-          let d = diamonds;
-          let n = totallyTiles;
-          let x = totallyTiles - m;
+          const d = Number(diamonds);
+          const m = Number(mines);
+          const n = Number(totallyTiles);
 
-          function factorial(number) {
-            let value = number;
-            for (let i = number; i > 1; i--) value *= i - 1;
-            return value;
+          if (d <= 0) return 1;
+          if (n <= 1) return 1;
+          if (m < 1 || m >= n) return 1;
+
+          const safeReveals = Math.min(d, n - m);
+          if (safeReveals <= 0) return 1;
+
+          let result = 1;
+
+          // mult *= 1 / (1 - mines / remainingTiles)
+          for (let i = 0; i < safeReveals; i++) {
+            const remainingTiles = n - i;
+            const denominator = 1 - m / remainingTiles;
+
+            if (denominator <= 0) return 10000;
+            result *= 1 / denominator;
           }
 
-          function combinationOne(n, d) {
-            let num = n;
-            let dum = d;
-            if (n === d) return 1;
-
-            return factorial(num) / (factorial(dum) * factorial(num - dum));
-          }
-
-          function combinationTwo(x, d) {
-            let xum = x;
-            let dum = d;
-
-            if (x === d) return 1;
-            return factorial(xum) / (factorial(dum) * factorial(xum - dum));
-          }
-
-          const mult = risk === 1 ? 0.99 : 0.85;
-          let first = combinationOne(n, d);
-          let second = combinationTwo(x, d);
-          let result = mult * (first / second);
+          result *= 0.99;
 
           if (result > 10000) return 10000;
-
-          result = Math.round(result * 100) / 100;
-          return result;
+          return Math.round(result * 100) / 100;
         },
       },
-    }).mount('#app')
+    }).mount('#app');
   </script>
   <script>
     window.locationRead = (() => {
