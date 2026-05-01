@@ -10,14 +10,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800&display=swap" rel="stylesheet">
-  <script src="./libs/crypto.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
   <style>
-  /* http://meyerweb.com/eric/tools/css/reset/ 
+  /* http://meyerweb.com/eric/tools/css/reset/
     v2.0 | 20110126
     License: none (public domain)
   */
-  
+
   html, body, div, span, applet, object, iframe,
   h1, h2, h3, h4, h5, h6, p, blockquote, pre,
   a, abbr, acronym, address, big, cite, code,
@@ -27,8 +27,8 @@
   dl, dt, dd, ol, ul, li,
   fieldset, form, label, legend,
   table, caption, tbody, tfoot, thead, tr, th, td,
-  article, aside, canvas, details, embed, 
-  figure, figcaption, footer, header, hgroup, 
+  article, aside, canvas, details, embed,
+  figure, figcaption, footer, header, hgroup,
   menu, nav, output, ruby, section, summary,
   time, mark, audio, video {
     margin: 0;
@@ -38,13 +38,12 @@
     font: inherit;
     vertical-align: baseline;
   }
-  /* HTML5 display-role reset for older browsers */
-  article, aside, details, figcaption, figure, 
+  article, aside, details, figcaption, figure,
   footer, header, hgroup, menu, nav, section {
     display: block;
   }
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     line-height: 1;
     background-color: var(--bg-main);
     padding: 60px 0;
@@ -57,7 +56,7 @@
   }
   blockquote:before, blockquote:after,
   q:before, q:after {
-    content: '';
+    content: "";
     content: none;
   }
   table {
@@ -80,19 +79,16 @@
     --body-primary: rgb(225, 231, 228);
     --body-light: rgb(184, 184, 184);
     --body-default: rgb(138, 138, 138);
-    
-    /* // input */
+
     --input-text: rgb(127, 127, 127);
     --input-light: rgb(80, 80, 80);
     --input-default: rgb(41, 41, 41);
 
-    /* // bg */
     --bg-light: rgb(35, 35, 35);
     --bg-secondary: rgb(27, 27, 27);
     --bg-primary: rgb(24, 24, 24);
     --bg-main: rgb(13, 13, 13);
 
-    /* // success */
     --success-800: rgb(28, 109, 37);
     --success-700: rgb(38, 145, 49);
     --success-600: rgb(47, 181, 61);
@@ -102,7 +98,6 @@
     --success-200: rgb(144, 224, 152);
     --success-100: rgb(225, 247, 230);
 
-    /* // accent */
     --accent-800: rgb(70, 20, 135);
     --accent-700: rgb(88, 21, 174);
     --accent-600: rgb(105, 22, 213);
@@ -112,8 +107,7 @@
     --accent-200: rgb(178, 128, 242);
     --accent-100: rgb(241, 232, 255);
     --accent-logo: rgb(142, 53, 255);
-    
-    /* // error */
+
     --error: rgb(255, 127, 2);
     --error-800: rgb(139, 27, 27);
     --error-700: rgb(185, 36, 36);
@@ -124,7 +118,6 @@
     --error-200: rgb(255, 143, 143);
     --error-100: rgb(253, 232, 232);
 
-    /* // warning */
     --warning-800: rgb(196, 183, 57);
     --warning-700: rgb(220, 202, 35);
     --warning-600: rgb(243, 221, 12);
@@ -134,7 +127,6 @@
     --warning-200: rgb(255, 244, 140);
     --warning-100: rgb(253, 246, 178);
 
-    /* // base */
     --white: rgb(255, 255, 255);
     --black: rgb(0, 0, 0);
   }
@@ -218,9 +210,8 @@
 
   tr {
     text-align: left;
-    /* border-bottom: 1px solid var(--body-default); */
   }
-  
+
   thead {
     background-color: var(--bg-light);
   }
@@ -265,7 +256,6 @@
   .active {
     background-color: rgba(255, 143, 143, .4);
   }
-
   </style>
 </head>
 
@@ -302,30 +292,30 @@
               </div>
               <div class="col">
                 <label class="label">Risk</label>
-                <input v-model="risk" class="input" type="text" placeholder="Risk">
+                <input v-model.number="risk" class="input" type="number" min="1" max="4" placeholder="Risk (1-4)">
               </div>
             </div>
             <div class="desc-block">
               <h3 class="label">How does it work:</h3>
               <p class="p-tag">
-                For Mines we taking randomly created client-seed by user
+                For Mines, we are using a randomly created client seed from the user.
               </p>
               <div class="sizedBoxHeight"></div>
               <p class="p-tag">
-                Server seed is hidden at first, but its taking randomly from blockchain,
-                which you can check in link from left
+                The server seed is hidden at first, but it is randomly taken from the blockchain,
+                which you can check using the link on the left.
               </p>
               <div class="sizedBoxHeight"></div>
               <p class="p-tag">
-                All of this data you can check here,
-                links are providing for every bet from
-                aslot.com/games/limbo
+                All of this data can be checked here.
+                Links are provided for every bet from
+                aslot.com/games/mines
               </p>
             </div>
           </div>
           <div class="field is-grouped">
             <p class="submit-btn">
-              <button class="button is-primary" @click="initResult()">Verify</button>
+              <button class="button is-primary" @click="initResult">Verify</button>
             </p>
           </div>
         </div>
@@ -346,14 +336,16 @@
           <div class="sizedBoxHeight"></div>
           <table class="table">
             <thead>
-              <th>Order</th>
-              <th>Mine number</th>
+              <tr>
+                <th>Order</th>
+                <th>Mine number</th>
+              </tr>
             </thead>
             <tbody>
-                <tr v-for="(item, i) in minesArray">
-                  <td>{{ i + 1 }}</td>
-                  <td :class="{ active: lostMine - 1 === item }">💣 on {{ item }}</td>
-                </tr>
+              <tr v-for="(item, i) in minesArray" :key="`${item}-${i}`">
+                <td>{{ i + 1 }}</td>
+                <td :class="{ active: Number(lostMine) === Number(item) }">💣 on {{ item }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -363,7 +355,8 @@
   <script type="module">
     const query = locationRead.queryString();
 
-    import { createApp } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    import { createApp } from "https://unpkg.com/vue@3/dist/vue.esm-browser.js";
+    import { blake2b } from "https://esm.sh/@noble/hashes@1.5.0/blake2b";
 
     const TILES_BY_RISK = {
       1: 25,
@@ -380,41 +373,37 @@
           serverSeed: query.ss ?? "",
           risk: Number(query.r ?? 1),
           lostMine: Number(query.lm ?? 0),
-          gameResult: "0",
-          minesArray: [],
+          minesArray: []
         };
       },
-
       mounted() {
         if (this.clientSeed && this.nonce && this.serverSeed && this.risk) {
           this.initResult();
         }
       },
-
       computed: {
         hashedServerSeed() {
           if (!this.serverSeed) return "0";
-          return CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(`0x${this.serverSeed}`)).toString();
+          return CryptoJS.SHA256(
+            CryptoJS.enc.Utf8.parse(`0x${this.serverSeed}`)
+          ).toString();
         }
       },
-
       methods: {
         getTilesByRisk(risk) {
           return TILES_BY_RISK[risk] ?? 25;
         },
-
         bytesToUniformFloat(inputBytes) {
-          // 64-byte output
-          const hash = blake2b(inputBytes, null, 64); // Uint8Array(64)
-
-          // first 8 bytes as little-endian uint64
-          const view = new DataView(hash.buffer, hash.byteOffset, hash.byteLength);
-          const intVal = view.getBigUint64(0, true); // true = little-endian
+          const hash = blake2b(inputBytes, { dkLen: 64 });
+          const view = new DataView(
+            hash.buffer,
+            hash.byteOffset,
+            hash.byteLength
+          );
+          const intVal = view.getBigUint64(0, true);
           const max = 0xFFFFFFFFFFFFFFFFn;
-
           return Number(intVal) / Number(max);
         },
-
         calcMinesIxs(size, minesCount, randomValue) {
           const remaining = Array.from({ length: size }, (_, i) => i + 1);
           const mineIxs = [];
@@ -422,7 +411,6 @@
           for (let i = 0; i < minesCount; i++) {
             const seed = `${randomValue}-${i}`;
             const seedBytes = new TextEncoder().encode(seed);
-
             const rand = this.bytesToUniformFloat(seedBytes);
             const index = Math.min(
               Math.floor(rand * remaining.length),
@@ -435,8 +423,11 @@
 
           return mineIxs;
         },
-
         initResult() {
+          if (typeof CryptoJS === "undefined") {
+            throw new Error("CryptoJS is not loaded");
+          }
+
           const randomValue = CryptoJS.HmacSHA256(
             `${this.clientSeed}:${this.nonce}`,
             this.serverSeed
@@ -445,7 +436,6 @@
           const allTiles = this.getTilesByRisk(Number(this.risk));
           this.minesArray = this.calcMinesIxs(allTiles, allTiles, randomValue);
         },
-
         countPayout(diamonds, mines, totallyTiles) {
           const d = Number(diamonds);
           const m = Number(mines);
@@ -459,8 +449,6 @@
           if (safeReveals <= 0) return 1;
 
           let result = 1;
-
-          // mult *= 1 / (1 - mines / remainingTiles)
           for (let i = 0; i < safeReveals; i++) {
             const remainingTiles = n - i;
             const denominator = 1 - m / remainingTiles;
@@ -470,30 +458,29 @@
           }
 
           result *= 0.99;
-
           if (result > 10000) return 10000;
           return Math.round(result * 100) / 100;
-        },
-      },
-    }).mount('#app');
+        }
+      }
+    }).mount("#app");
   </script>
   <script>
     window.locationRead = (() => {
       function queryString() {
-        return window.location.search.replace('?', '')
-          .split('&')
+        return window.location.search
+          .replace("?", "")
+          .split("&")
           .reduce(function (res, item) {
-            let kv = item.split('=');
-            res[kv[0]] = kv[1];
+            const kv = item.split("=");
+            if (kv[0]) res[kv[0]] = kv[1];
             return res;
-          }, {})
+          }, {});
       }
-      
+
       return {
-        queryString,
-      }
+        queryString
+      };
     })();
   </script>
 </body>
-
 </html>
